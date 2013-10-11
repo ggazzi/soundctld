@@ -1,29 +1,37 @@
 """Generic linux daemon base class for python 3.x."""
 
-import sys, os, time, atexit, signal
+import sys, os, time, atexit, signal, argparse
 
 
 def main(daemon):
     """Usual functionality of a daemon's command.
     """
-    if len(sys.argv) >= 2:
-        if 'start' == sys.argv[1]:
-            if len(sys.argv) >= 3:
-                daemon.pidfile = sys.argv[3]
-            daemon.start()
-        elif 'stop' == sys.argv[1]:
-            daemon.stop()
-        elif 'restart' == sys.argv[1]:
-            daemon.restart()
-        elif 'test' == sys.argv[1]:
-            daemon.run()
-        else:
-            print("Unknown command")
-            sys.exit(2)
-        sys.exit(0)
-    else:
-        print("usage: %s start|stop|restart|test" % sys.argv[0])
-        sys.exit(2)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-p', '--pid-file', dest='pidfile')
+
+    subps = parser.add_subparsers(dest='command', title='commands')
+
+    start = subps.add_parser("start")
+    stop = subps.add_parser("stop")
+    restart = subps.add_parser("restart")
+    test = subps.add_parser("test", help="Run the service without daemonizing.")
+
+
+    args = parser.parse_args()
+    print(args)
+
+    if args.pidfile:
+        daemon.pidfile = args.pidfile
+    
+    if 'start' == args.command:
+        daemon.start()
+    elif 'stop' == args.command:
+        daemon.stop()
+    elif 'restart' == args.command:
+        daemon.restart()
+    elif 'test' == args.command:
+        daemon.run()
 
 
 class Daemon:
