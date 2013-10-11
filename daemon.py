@@ -6,19 +6,23 @@ import sys, os, time, atexit, signal
 def main(daemon):
     """Usual functionality of a daemon's command.
     """
-    if len(sys.argv) == 2:
+    if len(sys.argv) >= 2:
         if 'start' == sys.argv[1]:
+            if len(sys.argv) >= 3:
+                daemon.pidfile = sys.argv[3]
             daemon.start()
         elif 'stop' == sys.argv[1]:
             daemon.stop()
         elif 'restart' == sys.argv[1]:
             daemon.restart()
+        elif 'test' == sys.argv[1]:
+            daemon.run()
         else:
             print("Unknown command")
             sys.exit(2)
         sys.exit(0)
     else:
-        print("usage: %s start|stop|restart" % sys.argv[0])
+        print("usage: %s start|stop|restart|test" % sys.argv[0])
         sys.exit(2)
 
 
