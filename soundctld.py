@@ -1,3 +1,4 @@
+#!/usr/bin/python
 """Simple daemon for controlling the audio options and displaying notifications of the change.
 
 This daemon allows simple control of audio parameters, while

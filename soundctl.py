@@ -1,3 +1,4 @@
+#!/usr/bin/python
 from argparse import ArgumentTypeError
 from dbusclient import DBusClient, bounded
 
