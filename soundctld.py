@@ -6,6 +6,8 @@ triggering notifications (through dbus, using freedesktop's
 Desktop Notifications Specification) of the changes made.
 """
 
+import logging
+
 import alsaaudio as alsa
 
 import dbus
@@ -29,9 +31,8 @@ NOTIF_DBUS_INTERFACE = "org.freedesktop.Notifications"
 NUM_VOLUME_STEPS = 25
 
 
-def log(text):
-    with open('/home/arch-sda7/ggazzi/soundctld.log', 'a') as out:
-        out.write(text + '\n')
+LOG_FILE = '/home/arch-sda7/ggazzi/.local/share/soundctld/soundctld.log'
+
 
 def is_active(output):
     """True iff any channel of the given mixer is not muted.
@@ -39,7 +40,7 @@ def is_active(output):
     return any( mute==0 for mute in alsa.Mixer(output).getmute() )
 
 def index_when(elements, condition):
-    """Return the first index of the given list whose element satisfies the condition.
+    """Return the first index xof the given list whose element satisfies the condition.
     """
     for idx, el in enumerate(elements):
         if condition(el):
@@ -55,6 +56,8 @@ class SoundCtlDBusService(dbus.service.Object):
     """
 
     def __init__(self):
+        logging.basicConfig(filename=LOG_FILE, level=logging.DEBUG)
+
         bus_name = dbus.service.BusName('br.ggazzi.soundctl', bus=dbus.SessionBus())
         dbus.service.Object.__init__(self, bus_name, '/br/ggazzi/soundctl')
 
@@ -66,20 +69,27 @@ class SoundCtlDBusService(dbus.service.Object):
 
     @dbus.service.method('br.ggazzi.soundctl')
     def notify_volume(self):
-        self.volume_notif_id = self.notify( "Volume %d%%" % alsa.Mixer(MASTER).getvolume()[0],
-                                            id_num=self.volume_notif_id )
+        try:
+            self.volume_notif_id = self.notify( "Volume %d%%" % alsa.Mixer(MASTER).getvolume()[0],
+                                                id_num=self.volume_notif_id )
+        except Exception as e:
+            logging.exception('')
 
     @dbus.service.method('br.ggazzi.soundctl', in_signature='n')
     def volume_up(self, amt):
         """Increases the volume by the given amount and issues a notification of the current volume.
         """
-        mixer = alsa.Mixer(MASTER)
+        try:
+            mixer = alsa.Mixer(MASTER)
 
-        curr_volume = int(mean(mixer.getvolume()))
-        next_volume = min(curr_volume+amt, 100)
+            curr_volume = int(mean(mixer.getvolume()))
+            next_volume = min(curr_volume+amt, 100)
 
-        mixer.setvolume(next_volume)
-        self.notify_volume()
+            mixer.setvolume(next_volume)
+            self.notify_volume()
+
+        except Exception as e:
+            logging.exception('')
 
     @dbus.service.method('br.ggazzi.soundctl', in_signature='n')
     def volume_down(self, amt):
@@ -103,9 +113,12 @@ class SoundCtlDBusService(dbus.service.Object):
     def notify_outputs(self):
         """Issues a notification showing which output mixers are currently active.
         """
-        active = [ o for o in OUTPUTS if is_active(o) ]
-        self.output_notif_id = self.notify( ', '.join(active) if len(active) > 0 else 'Mute',
-                                            id_num=self.output_notif_id )
+        try:
+            active = [ o for o in OUTPUTS if is_active(o) ]
+            self.output_notif_id = self.notify( ', '.join(active) if len(active) > 0 else 'Mute',
+                                                id_num=self.output_notif_id )
+        except Exception as e:
+            logging.exception('')
 
     @dbus.service.method('br.ggazzi.soundctl')
     def cycle_outputs(self):
@@ -114,16 +127,20 @@ class SoundCtlDBusService(dbus.service.Object):
         Each of the output mixers configured gets a turn for being active,
         plus a turn for muting them all.
         """
-        idx_curr = index_when(OUTPUTS, is_active)
-        idx_next = 0 if idx_curr is None else idx_curr+1
+        try:
+            idx_curr = index_when(OUTPUTS, is_active)
+            idx_next = 0 if idx_curr is None else idx_curr+1
 
-        for out in OUTPUTS:
-            alsa.Mixer(out).setmute(1)
+            for out in OUTPUTS:
+                alsa.Mixer(out).setmute(1)
 
-        if idx_next < len(OUTPUTS):
-            alsa.Mixer(OUTPUTS[idx_next]).setmute(0)
+            if idx_next < len(OUTPUTS):
+                alsa.Mixer(OUTPUTS[idx_next]).setmute(0)
 
-        self.notify_outputs()
+            self.notify_outputs()
+
+        except Exception as e:
+            logging.exception('')
 
 
     def notify(self, summary, text='', id_num=0, time=1000, icon='volume-knob'):
