@@ -19,7 +19,6 @@ def main(daemon):
 
 
     args = parser.parse_args()
-    print(args)
 
     if args.pidfile:
         daemon.pidfile = args.pidfile
