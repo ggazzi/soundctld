@@ -157,7 +157,7 @@ class SoundCtlDaemon(daemon.Daemon):
     """
 
     def run(self):
-        log("Daemon started.")
+        logging.info("Daemon started.")
 
         from gi.repository import Gtk
         from dbus.mainloop.glib import DBusGMainLoop
@@ -165,7 +165,7 @@ class SoundCtlDaemon(daemon.Daemon):
         DBusGMainLoop(set_as_default=True)
         service = SoundCtlDBusService()
 
-        log('Starting GTK loop...')
+        logging.info('Starting GTK loop.')
         Gtk.main()
         
 
