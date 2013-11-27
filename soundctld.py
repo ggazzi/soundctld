@@ -55,15 +55,18 @@ class SoundCtlDBusService(dbus.service.Object):
     """Service providing the sound-controlling functions with change notifications.
     """
 
+    @property
+    def notifier(self):
+        return dbus.Interface( dbus.SessionBus().get_object(NOTIF_DBUS_ITEM, NOTIF_DBUS_PATH),
+                               NOTIF_DBUS_INTERFACE)
+
     def __init__(self):
         logging.basicConfig(filename=LOG_FILE, level=logging.DEBUG)
 
-        bus_name = dbus.service.BusName('br.ggazzi.soundctl', bus=dbus.SessionBus())
-        dbus.service.Object.__init__(self, bus_name, '/br/ggazzi/soundctl')
-
-        self.notifier = dbus.Interface( dbus.SessionBus().get_object(NOTIF_DBUS_ITEM, NOTIF_DBUS_PATH),
-                                        NOTIF_DBUS_INTERFACE )
-
+        bus_name = dbus.service.BusName('br.ggazzi.soundctl',
+                                        bus=dbus.SessionBus())
+        dbus.service.Object.__init__(self, bus_name,
+                                     '/br/ggazzi/soundctl')
         self.volume_notif_id = 0
         self.output_notif_id = 0
 
@@ -150,7 +153,7 @@ class SoundCtlDBusService(dbus.service.Object):
         interface stup, and already providing some appropriate default arguments.
         """
         return self.notifier.Notify("soundctl", id_num, icon, summary, text, '', '', time)
-                     
+
 
 class SoundCtlDaemon(daemon.Daemon):
     """Daemon class for running the service.
@@ -167,6 +170,6 @@ class SoundCtlDaemon(daemon.Daemon):
 
         logging.info('Starting GTK loop.')
         Gtk.main()
-        
+
 
 if __name__ == '__main__': daemon.main( SoundCtlDaemon('/tmp/soundctld.pid') )
