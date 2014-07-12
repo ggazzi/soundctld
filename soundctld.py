@@ -20,7 +20,7 @@ import daemon
 MASTER = 'Master'
 
 # Name of the other interesting ALSA output mixers
-OUTPUTS = ("Headphone", "Speaker")
+OUTPUTS = ("Speaker", "Headphone")
 
 # DBus variables for this service
 NOTIF_DBUS_ITEM = "org.freedesktop.Notifications"
