@@ -31,6 +31,8 @@ def main(daemon):
         daemon.restart()
     elif 'test' == args.command:
         daemon.run()
+    else:
+        print(parser.format_help())
 
 
 class Daemon:
