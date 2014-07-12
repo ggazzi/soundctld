@@ -1,7 +1,7 @@
 import dbus
 import argparse
 
-def verifying(cast, pre_condition=None, pre_message=None, post_condition=None, 
+def verifying(cast, pre_condition=None, pre_message=None, post_condition=None,
               post_message=None, exception_type=None):
     """Create a version of the given 'type-cast' with added constraints.
 
@@ -75,22 +75,26 @@ class DBusClient:
         self.item = item
         self.path = path
         self.interface = interface
+        self.known_methods = []
 
         parser = argparse.ArgumentParser(*args, **kwargs)
         self.arg_parser = parser
-        self.method_subparsers = parser.add_subparsers(title='commands',
-                                                       dest='method', 
-                                                       metavar='COMMAND',
-                                                       description="Possible commands to call. Invoke "
-                                                       "them with the '-h' or '--help' option for "
-                                                       "more information.")
+        self.method_parsers = parser.add_subparsers(title='commands',
+                                                    dest='method',
+                                                    metavar='COMMAND',
+                                                    description="Possible commands to call. Invoke "
+                                                    "them with the '-h' or '--help' option for "
+                                                    "more information.")
 
     def add_method(self, name, **kwargs):
         if 'help' not in kwargs:
             kwargs['help'] = ''
         if 'description' not in kwargs:
             kwargs['description'] = kwargs['help']
-        parser = self.method_subparsers.add_parser(name, **kwargs)
+
+        self.known_methods.append(name)
+        parser = self.method_parsers.add_parser(name, **kwargs)
+
         return DBusMethod(parser)
 
     def parse_args(self, args=None, namespace=None):
@@ -102,13 +106,17 @@ class DBusClient:
 
         bus = dbus.SessionBus()
         obj = bus.get_object(self.item, self.path)
-        getattr(obj, args.method)(*args.method_args, dbus_interface=self.interface)
+
+        if args.method:
+            getattr(obj, args.method)(*args.method_args, dbus_interface=self.interface)
+        else:
+            print(self.arg_parser.format_help())
 
 
 class DBusMethod:
 
     def __init__(self, parser):
-        self.arg_parser = parser    
+        self.arg_parser = parser
 
     def add_argument(self, name, **kwargs):
         if 'type' in kwargs and isinstance(kwargs['type'], str):
@@ -132,4 +140,3 @@ class DBusMethod:
         def __call__(self, parser, namespace, values, option_string):
             namespace.method_args.append(values)
             setattr(namespace, self.dest, values)
-            
